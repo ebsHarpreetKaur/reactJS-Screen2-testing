@@ -1,100 +1,112 @@
-import React, { useState, useCallback } from "react";
-import TableRow from "./TableRow";
-import styled from "styled-components";
-import { SortableContainer, SortableElement } from "react-sortable-hoc";
-import { ITEMS } from "./data";
-import arrayMove from "./arrayMove";
+import React, { useMemo, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors
+} from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy
+} from "@dnd-kit/sortable";
+import { useTable } from "react-table";
+import { DraggableTableRow } from "./DraggableTableRow";
+import { StaticTableRow } from "./StaticTableRow";
 
-const MyTableWrapper = styled.div`
-  padding: 10px;
+export function Table({ columns, data, setData }) {
+  const [activeId, setActiveId] = useState();
+  const items = useMemo(() => data?.map(({ id }) => id), [data]);
+  // Use the state and functions returned from useTable to build your UI
+  const {
+    getTableProps,
+    getTableBodyProps,
+    headerGroups,
+    rows,
+    prepareRow
+  } = useTable({
+    columns,
+    data
+  });
+  const sensors = useSensors(
+    useSensor(MouseSensor, {}),
+    useSensor(TouchSensor, {}),
+    useSensor(KeyboardSensor, {})
+  );
 
-  .fixed_header {
-    width: 800px;
-    table-layout: fixed;
-    border-collapse: collapse;
-
-    & > tbody {
-      display: block;
-      width: 807px;
-      overflow: auto;
-      height: 400px;
-      cursor: grabbing;
-      background: grey;
-    }
-
-    & > thead {
-      background: yellow;
-      color: black;
-
-      & > tr {
-        display: block;
-        //width: 793px;
-      }
-    }
-
-    & > thead th,
-    & > tbody td {
-      padding: 5px;
-      text-align: left;
-      width: 200px;
-      border: 1px solid #000;
-    }
+  function handleDragStart(event) {
+    setActiveId(event.active.id);
   }
-`;
 
-const SortableCont = SortableContainer(({ children }) => {
-    return <tbody>{children}</tbody>;
-});
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      setData((data) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        return arrayMove(data, oldIndex, newIndex);
+      });
+    }
 
-const SortableItem = SortableElement(props => <TableRow {...props} />);
+    setActiveId(null);
+  }
 
-const Table = () => {
-    const [items, setItems] = useState(ITEMS);
+  function handleDragCancel() {
+    setActiveId(null);
+  }
 
-    const onSortEnd = useCallback(({ oldIndex, newIndex }) => {
-        setItems(oldItems => arrayMove(oldItems, oldIndex, newIndex));
-    }, []);
+  const selectedRow = useMemo(() => {
+    if (!activeId) {
+      return null;
+    }
+    const row = rows.find(({ original }) => original.id === activeId);
+    prepareRow(row);
+    return row;
+  }, [activeId, rows, prepareRow]);
 
-    return (
-        <MyTableWrapper>
-            <table className="table table-dark fixed_header">
-                <thead>
-                    <tr>
-                        <th>First</th>
-                        <th>Second</th>
-                        <th>Third</th>
-                        <th>Forth</th>
-                    </tr>
-                    <tr>
-                        <th>This</th>
-                        <th>is</th>
-                        <th>second</th>
-                        <th>row</th>
-                    </tr>
-                </thead>
-                <SortableCont
-                    onSortEnd={onSortEnd}
-                    axis="y"
-                    lockAxis="y"
-                    lockToContainerEdges={true}
-                    lockOffset={["30%", "50%"]}
-                    helperClass="helperContainerClass"
-                    useDragHandle={true}
-                >
-                    {items.map((value, index) => (
-                        <SortableItem
-                            key={`item-${index}`}
-                            index={index}
-                            first={value.first}
-                            second={value.second}
-                            third={value.third}
-                            fourth={value.fourth}
-                        />
-                    ))}
-                </SortableCont>
-            </table>
-        </MyTableWrapper>
-    );
-};
-
-export default Table;
+  // Render the UI for your table
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragEnd={handleDragEnd}
+      onDragStart={handleDragStart}
+      onDragCancel={handleDragCancel}
+      collisionDetection={closestCenter}
+      modifiers={[restrictToVerticalAxis]}
+    >
+      <table {...getTableProps()}>
+        <thead>
+          {headerGroups.map((headerGroup) => (
+            <tr {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map((column) => (
+                <th {...column.getHeaderProps()}>{column.render("Header")}</th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody {...getTableBodyProps()}>
+          <SortableContext items={items} strategy={verticalListSortingStrategy}>
+            {rows.map((row, i) => {
+              prepareRow(row);
+              return <DraggableTableRow key={row.original.id} row={row} />;
+            })}
+          </SortableContext>
+        </tbody>
+      </table>
+      <DragOverlay>
+        {activeId && (
+          <table style={{ width: "100%" }}>
+            <tbody>
+              <StaticTableRow row={selectedRow} />
+            </tbody>
+          </table>
+        )}
+      </DragOverlay>
+    </DndContext>
+  );
+}

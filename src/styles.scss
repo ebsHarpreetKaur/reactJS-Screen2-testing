@@ -1,0 +1,22 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+
+  $scrollbar-size: 7px;
+
+  ::-webkit-scrollbar {
+    appearance: none;
+    height: $scrollbar-size;
+    width: $scrollbar-size;
+
+    &-thumb {
+      background-color: gray;
+      border: 0;
+      border-radius: $scrollbar-size / 2;
+    }
+
+    &-track {
+      background-color: white;
+    }
+  }
+}

@@ -2,6 +2,11 @@ import React from "react";
 import { SortableHandle } from "react-sortable-hoc";
 import styled from "styled-components";
 import { MdDragIndicator } from "react-icons/md";
+import Button from '@mui/material/Button';
+import { FaPlus } from "react-icons/fa";
+import Dropdown from 'react-dropdown';
+import 'react-dropdown/style.css';
+
 const TrWrapper = styled.tr`
   background: white;
   cursor: default;
@@ -36,7 +41,13 @@ const Handle = styled.div`
   cursor: grab;
 `;
 
-const RowHandler = SortableHandle(() => <Handle className="handle"><MdDragIndicator size={20}/></Handle>);
+
+const options = [
+  'one', 'two', 'three'
+];
+const defaultOption = options[0];
+
+const RowHandler = SortableHandle(() => <Handle className="handle"><MdDragIndicator size={20} /></Handle>);
 
 const TableRow = ({ first, second, third, fourth, className }) => {
   return (
@@ -47,7 +58,33 @@ const TableRow = ({ first, second, third, fourth, className }) => {
           {first}
         </div>
       </td>
-      <td>{second}</td>
+
+      <td className="dpd">
+        <div style={{display:"flex", flexDirection:"row"}}>
+          <Dropdown
+            options={options}
+            value={defaultOption}
+            placeholder="Select an option"
+            className="custom-dropdown"
+          />
+          <Dropdown
+            options={options}
+            value={defaultOption}
+            placeholder="Select an option"
+            className="custom-dropdown"
+          />
+          <Dropdown
+            options={options}
+            value={defaultOption}
+            placeholder="Select an option"
+            className="custom-dropdown"
+          />
+        </div>
+
+        <Button variant="outlined" style={{ fontSize: 10 }}><FaPlus /> Add Role</Button>
+
+        {/* {second} */}
+      </td>
       <td>{third}</td>
       <td>{fourth}</td>
     </TrWrapper>
@@ -55,6 +92,15 @@ const TableRow = ({ first, second, third, fourth, className }) => {
 };
 
 export default TableRow;
+
+
+
+
+
+
+
+
+
 
 
 

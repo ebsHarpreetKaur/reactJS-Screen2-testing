@@ -36,3 +36,16 @@
     transform: rotate(360deg);
   }
 }
+.custom-dropdown {
+  font-size: 12px; /* Adjust the font size */
+  padding: 5px; /* Adjust the padding */
+  width: 150px; /* Adjust the width */
+}
+
+.custom-dropdown .Dropdown-control {
+  height: 30px; /* Adjust the height */
+}
+
+.custom-dropdown .Dropdown-menu {
+  font-size: 12px; /* Adjust the font size of dropdown options */
+}
